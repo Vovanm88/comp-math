@@ -1,0 +1,13 @@
+bot/config.yaml
+bot/.venv/
+bot/__pycache__/
+bot/*.pyc
+
+# Bot runtime state (local machine)
+bot_state/
+leaderboard.json
+processed_commits.json
+
+# Secret tests are local-only
+tests/secret/
+

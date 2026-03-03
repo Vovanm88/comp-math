@@ -1,0 +1,34 @@
+name: build-binary
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # IMPORTANT:
+      # Replace this step with a real build for your course/project.
+      # The bot expects a binary uploaded as an artifact named "solution-binary".
+      - name: Build (template)
+        run: |
+          mkdir -p build
+          cat > build/solution <<'EOF'
+          #!/usr/bin/env bash
+          echo "template-binary: replace CI build step"
+          EOF
+          chmod +x build/solution
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: solution-binary
+          path: build/solution
+
