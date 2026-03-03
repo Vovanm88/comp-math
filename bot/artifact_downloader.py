@@ -3,6 +3,7 @@ from __future__ import annotations
 import io
 import os
 import pathlib
+import shutil
 import zipfile
 from dataclasses import dataclass
 from typing import Optional
@@ -33,8 +34,20 @@ def _extract_zip_bytes(zip_bytes: bytes, dest_dir: str) -> list[str]:
         for member in zf.infolist():
             if member.is_dir():
                 continue
-            zf.extract(member, path=dest_dir)
-            extracted_files.append(os.path.join(dest_dir, member.filename))
+            # Prevent Zip Slip (artifact contents can be attacker-controlled via PR CI).
+            member_name = member.filename.replace("\\", "/").lstrip("/")
+            if ".." in pathlib.PurePosixPath(member_name).parts:
+                raise ArtifactError(f"Unsafe path in artifact zip: {member.filename!r}")
+
+            target_path = (pathlib.Path(dest_dir) / member_name).resolve()
+            dest_root = pathlib.Path(dest_dir).resolve()
+            if not str(target_path).startswith(str(dest_root) + os.sep) and target_path != dest_root:
+                raise ArtifactError(f"Unsafe extraction path in artifact zip: {member.filename!r}")
+
+            target_path.parent.mkdir(parents=True, exist_ok=True)
+            with zf.open(member, "r") as src, open(target_path, "wb") as dst:
+                shutil.copyfileobj(src, dst)
+            extracted_files.append(str(target_path))
     return extracted_files
 
 
